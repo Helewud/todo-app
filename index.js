@@ -1,38 +1,12 @@
 // importing packages we need for our server to run
 const express = require("express");
 const mongoose = require("mongoose");
+const Todo = require("./todo.model");
 
 // calling the express server function
 const app = express();
-
-// generating a model for our database
-const TodoModel = mongoose.model(
-  "todo",
-  new mongoose.Schema({
-    id: {
-      type: String,
-      required: true,
-    },
-    content: {
-      type: String,
-      required: true,
-    },
-    is_done: {
-      type: Boolean,
-      required: false,
-    },
-    created_at: {
-      type: Date,
-      required: false,
-      default: new Date().now,
-    },
-    updated_at: {
-      type: Date,
-      required: false,
-      default: new Date().now,
-    },
-  })
-);
+const TodoModel = Todo;
+app.use(express.json());
 
 // route to get our landing page
 app.get("/home", (req, res) => {
@@ -48,27 +22,36 @@ app.post("/todo/create", (req, res) => {
     isDone: false,
   }).then((createdTodoModel) => {
     return res.json({
-      message: "Todo list created successfully.",
+      message: "Todo created successfully.",
       data: createdTodoModel,
     });
   });
 });
 
 // endpoint to toggle if the task is accomplished or not
-app.put("/todo/toggle", (req, res) => {
-  const { id } = req.params;
+app.patch("/todo/toggle/:todoId", (req, res) => {
+  const { todoId } = req.params;
 
   TodoModel.findOne({
-    id,
+    _id: todoId,
   }).then((todo) => {
-    TodoModel.updateOne({
-      is_done: !todo.is_done,
-    });
+    if (todo.is_done === true) {
+      todo.is_done = false;
+    } else {
+      todo.is_done = true;
+    }
 
-    return res.json({
-      message: "Todo task updated succesfully.",
-      data: todo,
-    });
+    TodoModel.updateOne(
+      { _id: todo._id },
+      {
+        is_done: todo.is_done,
+      }
+    ).then((updatedTodo) =>
+      res.json({
+        message: "Todo task updated succesfully.",
+        data: todo,
+      })
+    );
   });
 });
 
@@ -79,9 +62,12 @@ app.patch("/todo/edit/:todoId", (req, res) => {
 
   TodoModel.findOneAndUpdate(
     {
-      id: todoId,
+      _id: todoId,
     },
-    { content }
+    { content },
+    {
+      new: true,
+    }
   ).then((todo) => {
     return res.json({
       message: "Todo task updated succesfully.",
@@ -92,7 +78,7 @@ app.patch("/todo/edit/:todoId", (req, res) => {
 
 // endpoint to fetch all TodoModel tasks
 app.get("/todos", (req, res) => {
-  return TodoModel.findAll().then((todos) => {
+  return TodoModel.find().then((todos) => {
     return res.json({
       message: "Todo list fetched succesfully.",
       data: todos,
@@ -101,11 +87,11 @@ app.get("/todos", (req, res) => {
 });
 
 // endpoint to get a single TodoModel
-app.get("/todo/:id", (req, res) => {
-  const { id } = req.params;
+app.get("/todo/:todoId", (req, res) => {
+  const { todoId } = req.params;
 
   TodoModel.findOne({
-    id,
+    _id: todoId,
   }).then((todo) => {
     return res.json({
       message: "Todo task fetched succesfully.",
@@ -115,11 +101,11 @@ app.get("/todo/:id", (req, res) => {
 });
 
 // endpoint to delete a TodoModel task
-app.delete("/todo/:id", (req, res) => {
-  const { id } = req.params;
+app.delete("/todo/:todoId", (req, res) => {
+  const { todoId } = req.params;
 
   TodoModel.deleteOne({
-    id,
+    _id: todoId,
   }).then((todo) => {
     return res.json({
       message: "Todo task deleted succesfully.",
