@@ -7,6 +7,7 @@ const Todo = require("./todo.model");
 const app = express();
 const TodoModel = Todo;
 app.use(express.json());
+app.use(cors());
 
 // route to get our landing page
 app.get("/home", (req, res) => {
