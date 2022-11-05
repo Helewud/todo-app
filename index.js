@@ -1,6 +1,7 @@
 // importing packages we need for our server to run
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require('cors')
 const Todo = require("./todo.model");
 
 // calling the express server function
